@@ -9,21 +9,13 @@ class Attendance extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'check_in',
-        'check_out',
-        'status', // 'present', 'absent', 'late', 'leave'
-        'location_in',
-        'location_out',
-        'overtime_hours',
-        'overtime_approved',
-        'notes',
+        'user_id', 'date', 'check_in', 'check_out', 'status'
     ];
 
     protected $casts = [
+        'date' => 'date',
         'check_in' => 'datetime',
         'check_out' => 'datetime',
-        'overtime_approved' => 'boolean',
     ];
 
     public function user()

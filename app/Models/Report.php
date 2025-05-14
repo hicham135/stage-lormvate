@@ -9,20 +9,13 @@ class Report extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'type', // 'attendance', 'performance', 'tasks', 'general'
-        'department_id',
-        'period_start',
-        'period_end',
-        'generated_by',
-        'file_path',
-        'parameters',
+        'title', 'content', 'type', 'department_id', 'created_by',
+        'period_start', 'period_end', 'status'
     ];
 
     protected $casts = [
         'period_start' => 'date',
         'period_end' => 'date',
-        'parameters' => 'array',
     ];
 
     public function department()
@@ -30,8 +23,8 @@ class Report extends Model
         return $this->belongsTo(Department::class);
     }
 
-    public function generator()
+    public function creator()
     {
-        return $this->belongsTo(User::class, 'generated_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

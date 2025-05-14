@@ -1,75 +1,69 @@
 <?php
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetPasswordController;
-// routes/web.php
+
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DepartmentHeadController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TeamController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RequestController;
 
-Route::middleware(['auth'])->group(function () {
-    // Routes pour le Chef de département
-    Route::middleware(['department.head'])->prefix('chef-departement')->name('department_head.')->group(function () {
-        // Tableau de bord
-        Route::get('/dashboard', [DepartmentHeadController::class, 'dashboard'])->name('dashboard');
-        
-        // Gestion de l'équipe
-        Route::get('/equipe', [DepartmentHeadController::class, 'teamManagement'])->name('team_management');
-        Route::get('/employe/{id}', [DepartmentHeadController::class, 'employeeDetails'])->name('employee_details');
-        
-        // Consultation des présences
-        Route::get('/presences', [DepartmentHeadController::class, 'attendanceManagement'])->name('attendance');
-        Route::get('/historique-presences', [DepartmentHeadController::class, 'attendanceHistory'])->name('attendance_history');
-        
-        // Validation des demandes
-        Route::get('/demandes-conges', [DepartmentHeadController::class, 'leaveRequests'])->name('leave_requests');
-        Route::post('/approuver-conge/{id}', [DepartmentHeadController::class, 'approveLeaveRequest'])->name('approve_leave');
-        Route::post('/rejeter-conge/{id}', [DepartmentHeadController::class, 'rejectLeaveRequest'])->name('reject_leave');
-        
-        Route::get('/heures-supplementaires', [DepartmentHeadController::class, 'overtimeRequests'])->name('overtime_requests');
-        Route::post('/approuver-heures/{id}', [DepartmentHeadController::class, 'approveOvertime'])->name('approve_overtime');
-        
-        // Attribution et suivi des tâches
-        Route::get('/taches', [DepartmentHeadController::class, 'tasks'])->name('tasks');
-        Route::post('/creer-tache', [DepartmentHeadController::class, 'createTask'])->name('create_task');
-        Route::post('/update-tache/{id}', [DepartmentHeadController::class, 'updateTaskStatus'])->name('update_task');
-        
-        // Publication d'annonces départementales
-        Route::get('/annonces', [DepartmentHeadController::class, 'announcements'])->name('announcements');
-        Route::post('/creer-annonce', [DepartmentHeadController::class, 'createAnnouncement'])->name('create_announcement');
-        Route::delete('/supprimer-annonce/{id}', [DepartmentHeadController::class, 'deleteAnnouncement'])->name('delete_announcement');
-        
-        // Évaluation des membres de l'équipe
-        Route::get('/evaluations', [DepartmentHeadController::class, 'evaluations'])->name('evaluations');
-        Route::post('/creer-evaluation', [DepartmentHeadController::class, 'createEvaluation'])->name('create_evaluation');
-        Route::get('/edition-evaluation/{id}', [DepartmentHeadController::class, 'editEvaluation'])->name('edit_evaluation');
-        Route::post('/update-evaluation/{id}', [DepartmentHeadController::class, 'updateEvaluation'])->name('update_evaluation');
-        
-        // Rapports départementaux
-        Route::get('/rapports', [DepartmentHeadController::class, 'reports'])->name('reports');
-        Route::post('/generer-rapport', [DepartmentHeadController::class, 'generateReport'])->name('generate_report');
-        Route::get('/voir-rapport/{id}', [DepartmentHeadController::class, 'viewReport'])->name('view_report');
-    });
+// Main dashboard
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Add this to your routes/web.php file
+// Team Management
+Route::resource('team', TeamController::class);
 
+// Attendance
+Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+Route::get('/attendance/report', [AttendanceController::class, 'report'])->name('attendance.report');
 
-// Authentication Routes
-Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('login', [LoginController::class, 'login']);
-Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+// Tasks
+Route::resource('tasks', TaskController::class);
 
-// Registration Routes
-Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('register', [RegisterController::class, 'register']);
+// Evaluations
+Route::resource('evaluations', EvaluationController::class);
 
-// Password Reset Routes
-Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-Route::post('password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
-Route::get('password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
-Route::post('password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
+// Reports
+Route::resource('reports', ReportController::class);
+Route::get('/reports/generate/monthly', [ReportController::class, 'generateMonthlyReport'])
+     ->name('reports.generate.monthly');
+
+// Requests
+Route::get('/requests', [RequestController::class, 'index'])->name('requests.index');
+Route::get('/requests/{id}', [RequestController::class, 'show'])->name('requests.show');
+Route::post('/requests/{id}/approve', [RequestController::class, 'approve'])->name('requests.approve');
+Route::post('/requests/{id}/reject', [RequestController::class, 'reject'])->name('requests.reject');
+
+// Routes pour l'interface employé
+Route::prefix('employee')->name('employee.')->group(function () {
+    // Tableau de bord
+    Route::get('/', [App\Http\Controllers\EmployeeDashboardController::class, 'index'])->name('dashboard');
+    
+    // Pointage de présence
+    Route::get('/attendance', [App\Http\Controllers\EmployeeAttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/check-in', [App\Http\Controllers\EmployeeAttendanceController::class, 'checkIn'])->name('attendance.check-in');
+    Route::post('/attendance/check-out', [App\Http\Controllers\EmployeeAttendanceController::class, 'checkOut'])->name('attendance.check-out');
+    Route::get('/attendance/history', [App\Http\Controllers\EmployeeAttendanceController::class, 'history'])->name('attendance.history');
+    
+    // Profil
+    Route::get('/profile', [App\Http\Controllers\EmployeeProfileController::class, 'index'])->name('profile.index');
+    Route::get('/profile/edit', [App\Http\Controllers\EmployeeProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/update', [App\Http\Controllers\EmployeeProfileController::class, 'update'])->name('profile.update');
+    
+    // Tâches
+    Route::get('/tasks', [App\Http\Controllers\EmployeeTaskController::class, 'index'])->name('tasks.index');
+    Route::get('/tasks/{id}', [App\Http\Controllers\EmployeeTaskController::class, 'show'])->name('tasks.show');
+    Route::post('/tasks/{id}/status', [App\Http\Controllers\EmployeeTaskController::class, 'updateStatus'])->name('tasks.status');
+    
+    // Demandes
+    Route::get('/requests', [App\Http\Controllers\EmployeeRequestController::class, 'index'])->name('requests.index');
+    Route::get('/requests/create', [App\Http\Controllers\EmployeeRequestController::class, 'create'])->name('requests.create');
+    Route::post('/requests/store', [App\Http\Controllers\EmployeeRequestController::class, 'store'])->name('requests.store');
+    Route::get('/requests/{id}', [App\Http\Controllers\EmployeeRequestController::class, 'show'])->name('requests.show');
+    
+    // Messages et annonces
+    Route::get('/messages', [App\Http\Controllers\EmployeeMessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{id}', [App\Http\Controllers\EmployeeMessageController::class, 'show'])->name('messages.show');
 });
-
-Auth::routes();
-
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

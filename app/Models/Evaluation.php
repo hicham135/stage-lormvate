@@ -9,25 +9,18 @@ class Evaluation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'evaluator_id',
-        'evaluatee_id',
-        'period',
-        'performance_score',
-        'punctuality_score',
-        'teamwork_score',
-        'initiative_score',
-        'comments',
-        'goals',
-        'status', // 'draft', 'submitted', 'acknowledged'
+        'evaluated_user_id', 'evaluator_id', 'period', 
+        'performance_score', 'communication_score', 'teamwork_score',
+        'innovation_score', 'comments', 'status'
     ];
+
+    public function evaluatedUser()
+    {
+        return $this->belongsTo(User::class, 'evaluated_user_id');
+    }
 
     public function evaluator()
     {
         return $this->belongsTo(User::class, 'evaluator_id');
-    }
-
-    public function evaluatee()
-    {
-        return $this->belongsTo(User::class, 'evaluatee_id');
     }
 }

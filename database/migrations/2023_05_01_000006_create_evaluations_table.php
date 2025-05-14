@@ -1,5 +1,5 @@
+<!-- database/migrations/2024_05_12_create_evaluations_table.php -->
 <?php
-// database/migrations/2023_05_01_000006_create_evaluations_table.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -10,17 +10,19 @@ return new class extends Migration
     {
         Schema::create('evaluations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('evaluator_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('evaluatee_id')->constrained('users')->onDelete('cascade');
+            $table->unsignedBigInteger('evaluated_user_id');
+            $table->unsignedBigInteger('evaluator_id');
             $table->string('period');
-            $table->integer('performance_score')->default(0);
-            $table->integer('punctuality_score')->default(0);
-            $table->integer('teamwork_score')->default(0);
-            $table->integer('initiative_score')->default(0);
+            $table->integer('performance_score');
+            $table->integer('communication_score');
+            $table->integer('teamwork_score');
+            $table->integer('innovation_score');
             $table->text('comments')->nullable();
-            $table->text('goals')->nullable();
-            $table->enum('status', ['draft', 'submitted', 'acknowledged'])->default('draft');
+            $table->string('status')->default('draft');
             $table->timestamps();
+            
+            $table->foreign('evaluated_user_id')->references('id')->on('users');
+            $table->foreign('evaluator_id')->references('id')->on('users');
         });
     }
 
