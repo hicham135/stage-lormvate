@@ -54,6 +54,7 @@
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="{{ route('employee.profile.index') }}"><i class="fas fa-user-cog me-2"></i>Profil</a></li>
                                 <li><hr class="dropdown-divider"></li>
+<<<<<<< HEAD
                                 <li>
                                     <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                         @csrf
@@ -62,6 +63,9 @@
                                         </button>
                                     </form>
                                 </li>
+=======
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a></li>
+>>>>>>> c20c1856788050a6e6e89bca26b992efb1776b00
                             </ul>
                         </div>
                     </div>

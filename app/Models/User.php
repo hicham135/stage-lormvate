@@ -1,15 +1,18 @@
+<<<<<<< HEAD
 <?php 
 
+=======
+<?php
+>>>>>>> c20c1856788050a6e6e89bca26b992efb1776b00
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -17,6 +20,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+<<<<<<< HEAD
         'name',
         'email',
         'password',
@@ -42,6 +46,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+=======
+        'name', 'email', 'role', 'department_id'
+>>>>>>> c20c1856788050a6e6e89bca26b992efb1776b00
     ];
 
     /**
@@ -52,17 +59,23 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
+<<<<<<< HEAD
     /**
      * Get the tasks assigned to the user.
      */
+=======
+>>>>>>> c20c1856788050a6e6e89bca26b992efb1776b00
     public function tasks()
     {
         return $this->hasMany(Task::class, 'assigned_to');
     }
 
+<<<<<<< HEAD
     /**
      * Get the attendances for the user.
      */
+=======
+>>>>>>> c20c1856788050a6e6e89bca26b992efb1776b00
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
