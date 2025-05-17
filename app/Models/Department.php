@@ -1,4 +1,5 @@
 <?php
+// app/Models/Department.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,9 +10,7 @@ class Department extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'description',
-        'head_id',
+        'name', 'description', 'head_id'
     ];
 
     public function head()
@@ -19,13 +18,18 @@ class Department extends Model
         return $this->belongsTo(User::class, 'head_id');
     }
 
-    public function employees()
+    public function users()
     {
         return $this->hasMany(User::class);
     }
 
-    public function announcements()
+    public function tasks()
     {
-        return $this->hasMany(Announcement::class);
+        return $this->hasMany(Task::class);
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class);
     }
 }

@@ -1,5 +1,5 @@
+<!-- database/migrations/2024_05_12_create_tasks_table.php -->
 <?php
-// database/migrations/2023_05_01_000003_create_tasks_table.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,15 +12,18 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->foreignId('assigned_by')->constrained('users')->onDelete('cascade');
-            $table->foreignId('assigned_to')->constrained('users')->onDelete('cascade');
-            $table->foreignId('department_id')->constrained()->onDelete('cascade');
-            $table->date('due_date')->nullable();
-            $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
-            $table->enum('status', ['pending', 'in_progress', 'completed', 'delayed'])->default('pending');
-            $table->integer('progress')->default(0);
-            $table->text('notes')->nullable();
+            $table->string('status')->default('pending');
+            $table->string('priority')->default('medium');
+            $table->unsignedBigInteger('assigned_to');
+            $table->unsignedBigInteger('assigned_by');
+            $table->unsignedBigInteger('department_id');
+            $table->dateTime('due_date')->nullable();
+            $table->dateTime('completed_at')->nullable();
             $table->timestamps();
+            
+            $table->foreign('assigned_to')->references('id')->on('users');
+            $table->foreign('assigned_by')->references('id')->on('users');
+            $table->foreign('department_id')->references('id')->on('departments');
         });
     }
 

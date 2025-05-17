@@ -1,75 +1,371 @@
 <?php
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetPasswordController;
-// routes/web.php
+
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DepartmentHeadController;
-
-Route::middleware(['auth'])->group(function () {
-    // Routes pour le Chef de département
-    Route::middleware(['department.head'])->prefix('chef-departement')->name('department_head.')->group(function () {
-        // Tableau de bord
-        Route::get('/dashboard', [DepartmentHeadController::class, 'dashboard'])->name('dashboard');
-        
-        // Gestion de l'équipe
-        Route::get('/equipe', [DepartmentHeadController::class, 'teamManagement'])->name('team_management');
-        Route::get('/employe/{id}', [DepartmentHeadController::class, 'employeeDetails'])->name('employee_details');
-        
-        // Consultation des présences
-        Route::get('/presences', [DepartmentHeadController::class, 'attendanceManagement'])->name('attendance');
-        Route::get('/historique-presences', [DepartmentHeadController::class, 'attendanceHistory'])->name('attendance_history');
-        
-        // Validation des demandes
-        Route::get('/demandes-conges', [DepartmentHeadController::class, 'leaveRequests'])->name('leave_requests');
-        Route::post('/approuver-conge/{id}', [DepartmentHeadController::class, 'approveLeaveRequest'])->name('approve_leave');
-        Route::post('/rejeter-conge/{id}', [DepartmentHeadController::class, 'rejectLeaveRequest'])->name('reject_leave');
-        
-        Route::get('/heures-supplementaires', [DepartmentHeadController::class, 'overtimeRequests'])->name('overtime_requests');
-        Route::post('/approuver-heures/{id}', [DepartmentHeadController::class, 'approveOvertime'])->name('approve_overtime');
-        
-        // Attribution et suivi des tâches
-        Route::get('/taches', [DepartmentHeadController::class, 'tasks'])->name('tasks');
-        Route::post('/creer-tache', [DepartmentHeadController::class, 'createTask'])->name('create_task');
-        Route::post('/update-tache/{id}', [DepartmentHeadController::class, 'updateTaskStatus'])->name('update_task');
-        
-        // Publication d'annonces départementales
-        Route::get('/annonces', [DepartmentHeadController::class, 'announcements'])->name('announcements');
-        Route::post('/creer-annonce', [DepartmentHeadController::class, 'createAnnouncement'])->name('create_announcement');
-        Route::delete('/supprimer-annonce/{id}', [DepartmentHeadController::class, 'deleteAnnouncement'])->name('delete_announcement');
-        
-        // Évaluation des membres de l'équipe
-        Route::get('/evaluations', [DepartmentHeadController::class, 'evaluations'])->name('evaluations');
-        Route::post('/creer-evaluation', [DepartmentHeadController::class, 'createEvaluation'])->name('create_evaluation');
-        Route::get('/edition-evaluation/{id}', [DepartmentHeadController::class, 'editEvaluation'])->name('edit_evaluation');
-        Route::post('/update-evaluation/{id}', [DepartmentHeadController::class, 'updateEvaluation'])->name('update_evaluation');
-        
-        // Rapports départementaux
-        Route::get('/rapports', [DepartmentHeadController::class, 'reports'])->name('reports');
-        Route::post('/generer-rapport', [DepartmentHeadController::class, 'generateReport'])->name('generate_report');
-        Route::get('/voir-rapport/{id}', [DepartmentHeadController::class, 'viewReport'])->name('view_report');
-    });
-
-    // Add this to your routes/web.php file
-
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TeamController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RequestController;
+use App\Http\Controllers\Auth\LoginController;
 
 // Authentication Routes
-Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('login', [LoginController::class, 'login']);
-Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-// Registration Routes
-Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('register', [RegisterController::class, 'register']);
-
-// Password Reset Routes
-Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-Route::post('password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
-Route::get('password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
-Route::post('password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
+// Redirect root to login
+Route::get('/', function () {
+    return redirect('/login');
 });
 
-Auth::routes();
+// Department Head Routes - Protected by auth middleware
+Route::middleware(['auth'])->group(function () {
+    // Dashboard for department head
+    Route::get('/dashboard', function () {
+        // Vérifier le rôle directement dans la route
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('employee.dashboard');
+        }
+        return app()->make(DashboardController::class)->index();
+    })->name('dashboard');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+    // Team Management
+    Route::get('/team', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TeamController::class)->index();
+    })->name('team.index');
+    
+    Route::get('/team/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TeamController::class)->show($id);
+    })->name('team.show');
+    
+    Route::get('/team/{id}/edit', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TeamController::class)->edit($id);
+    })->name('team.edit');
+    
+    Route::put('/team/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TeamController::class)->update(request(), $id);
+    })->name('team.update');
+
+    // Attendance
+    Route::get('/attendance', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(AttendanceController::class)->index(request());
+    })->name('attendance.index');
+    
+    Route::get('/attendance/report', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(AttendanceController::class)->report(request());
+    })->name('attendance.report');
+
+    // Tasks
+    Route::get('/tasks', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TaskController::class)->index();
+    })->name('tasks.index');
+    
+    Route::get('/tasks/create', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TaskController::class)->create();
+    })->name('tasks.create');
+    
+    Route::post('/tasks', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TaskController::class)->store(request());
+    })->name('tasks.store');
+    
+    Route::get('/tasks/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TaskController::class)->show($id);
+    })->name('tasks.show');
+    
+    Route::get('/tasks/{id}/edit', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TaskController::class)->edit($id);
+    })->name('tasks.edit');
+    
+    Route::put('/tasks/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(TaskController::class)->update(request(), $id);
+    })->name('tasks.update');
+
+    // Evaluations
+    Route::get('/evaluations', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(EvaluationController::class)->index();
+    })->name('evaluations.index');
+    
+    Route::get('/evaluations/create', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(EvaluationController::class)->create(request());
+    })->name('evaluations.create');
+    
+    Route::post('/evaluations', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(EvaluationController::class)->store(request());
+    })->name('evaluations.store');
+    
+    Route::get('/evaluations/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(EvaluationController::class)->show($id);
+    })->name('evaluations.show');
+    
+    Route::get('/evaluations/{id}/edit', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(EvaluationController::class)->edit($id);
+    })->name('evaluations.edit');
+    
+    Route::put('/evaluations/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(EvaluationController::class)->update(request(), $id);
+    })->name('evaluations.update');
+
+    // Reports
+    Route::get('/reports', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(ReportController::class)->index();
+    })->name('reports.index');
+    
+    Route::get('/reports/create', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(ReportController::class)->create();
+    })->name('reports.create');
+    
+    Route::post('/reports', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(ReportController::class)->store(request());
+    })->name('reports.store');
+    
+    Route::get('/reports/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(ReportController::class)->show($id);
+    })->name('reports.show');
+    
+    Route::get('/reports/{id}/edit', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(ReportController::class)->edit($id);
+    })->name('reports.edit');
+    
+    Route::put('/reports/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(ReportController::class)->update(request(), $id);
+    })->name('reports.update');
+    
+    Route::get('/reports/generate/monthly', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(ReportController::class)->generateMonthlyReport();
+    })->name('reports.generate.monthly');
+
+    // Requests
+    Route::get('/requests', function () {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(RequestController::class)->index();
+    })->name('requests.index');
+    
+    Route::get('/requests/{id}', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(RequestController::class)->show($id);
+    })->name('requests.show');
+    
+    Route::post('/requests/{id}/approve', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(RequestController::class)->approve($id);
+    })->name('requests.approve');
+    
+    Route::post('/requests/{id}/reject', function ($id) {
+        if (Auth::user()->role !== 'department_head') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(RequestController::class)->reject($id);
+    })->name('requests.reject');
+});
+
+// Employee Routes - Protected by auth middleware
+Route::middleware(['auth'])->prefix('employee')->name('employee.')->group(function () {
+    // Tableau de bord
+    Route::get('/', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('dashboard');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeDashboardController::class)->index();
+    })->name('dashboard');
+    
+    // Pointage de présence
+    Route::get('/attendance', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeAttendanceController::class)->index();
+    })->name('attendance.index');
+    
+    Route::post('/attendance/check-in', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeAttendanceController::class)->checkIn(request());
+    })->name('attendance.check-in');
+    
+    Route::post('/attendance/check-out', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeAttendanceController::class)->checkOut(request());
+    })->name('attendance.check-out');
+    
+    Route::get('/attendance/history', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeAttendanceController::class)->history(request());
+    })->name('attendance.history');
+    
+    // Profil
+    Route::get('/profile', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeProfileController::class)->index();
+    })->name('profile.index');
+    
+    Route::get('/profile/edit', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeProfileController::class)->edit();
+    })->name('profile.edit');
+    
+    Route::post('/profile/update', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeProfileController::class)->update(request());
+    })->name('profile.update');
+    
+    // Tâches
+    Route::get('/tasks', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeTaskController::class)->index(request());
+    })->name('tasks.index');
+    
+    Route::get('/tasks/{id}', function ($id) {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeTaskController::class)->show($id);
+    })->name('tasks.show');
+    
+    Route::post('/tasks/{id}/status', function ($id) {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeTaskController::class)->updateStatus(request(), $id);
+    })->name('tasks.status');
+    
+    // Demandes
+    Route::get('/requests', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeRequestController::class)->index();
+    })->name('requests.index');
+    
+    Route::get('/requests/create', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeRequestController::class)->create();
+    })->name('requests.create');
+    
+    Route::post('/requests/store', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeRequestController::class)->store(request());
+    })->name('requests.store');
+    
+    Route::get('/requests/{id}', function ($id) {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeRequestController::class)->show($id);
+    })->name('requests.show');
+    
+    // Messages et annonces
+    Route::get('/messages', function () {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeMessageController::class)->index();
+    })->name('messages.index');
+    
+    Route::get('/messages/{id}', function ($id) {
+        if (Auth::user()->role !== 'employee') {
+            return redirect()->route('login')->with('error', 'Accès non autorisé');
+        }
+        return app()->make(\App\Http\Controllers\EmployeeMessageController::class)->show($id);
+    })->name('messages.show');
+});

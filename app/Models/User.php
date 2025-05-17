@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace App\Models;
 
@@ -11,60 +11,68 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'department_id',
-        'role', // 'employee', 'department_head', 'hr_admin', 'direction'
-        'phone',
-        'address',
-        'start_date',
-        'profile_image',
+        'role',
+        'department_id'
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
+    /**
+     * Get the department that the user belongs to.
+     */
     public function department()
     {
         return $this->belongsTo(Department::class);
     }
 
-    public function attendances()
-    {
-        return $this->hasMany(Attendance::class);
-    }
-
+    /**
+     * Get the tasks assigned to the user.
+     */
     public function tasks()
     {
         return $this->hasMany(Task::class, 'assigned_to');
     }
 
-    public function assignedTasks()
+    /**
+     * Get the attendances for the user.
+     */
+    public function attendances()
     {
-        return $this->hasMany(Task::class, 'assigned_by');
+        return $this->hasMany(Attendance::class);
     }
 
-    public function leaveRequests()
-    {
-        return $this->hasMany(LeaveRequest::class);
-    }
-
+    /**
+     * Get the evaluations for the user.
+     */
     public function evaluations()
     {
-        return $this->hasMany(Evaluation::class, 'evaluatee_id');
-    }
-
-    public function isDepartmentHead()
-    {
-        return $this->role === 'department_head';
+        return $this->hasMany(Evaluation::class, 'evaluated_user_id');
     }
 }
